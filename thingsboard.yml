@@ -1,1 +1,53 @@
+#mkdir thingsboard-docker
+#cd thingsboard-docker
 
+#http://localhost:8080
+#tenant@thingsboard.org
+#tenant
+
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: tb-postgres
+    environment:
+      POSTGRES_DB: thingsboard
+      POSTGRES_USER: tbuser
+      POSTGRES_PASSWORD: tbpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - tb-postgres-data:/var/lib/postgresql/data
+    networks:
+      - tb-network
+
+  thingsboard:
+    image: thingsboard/tb-postgres:3.3.3
+    container_name: thingsboard
+    ports:
+      - "8080:9090"
+      - "1883:1883"
+      - "7070:7070"
+      - "5683-5688:5683-5688/udp"
+    environment:
+      TB_QUEUE_TYPE: in-memory
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/thingsboard
+      SPRING_DATASOURCE_USERNAME: tbuser
+      SPRING_DATASOURCE_PASSWORD: tbpass
+    depends_on:
+      - postgres
+    volumes:
+      - tb-data:/data
+      - tb-logs:/var/log/thingsboard
+    networks:
+      - tb-network
+
+volumes:
+  tb-postgres-data:
+  tb-data:
+  tb-logs:
+
+networks:
+  tb-network:
+    driver: bridge
